@@ -137,3 +137,33 @@ exports.deleteUser = catchAsync(async (req, res, next) => {
   }
   res.status(204).json({ status: 'success', data: null });
 });
+
+// Check if the user is logged in (checks for a valid JWT)
+exports.isLoggedIn = async (req, res, next) => {
+  if (req.cookies.jwt) {
+    try {
+      // 1) Verify the token
+      const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
+
+      // 2) Check if user still exists
+      const currentUser = await User.findById(decoded.id);
+      if (!currentUser) {
+        return next();
+      }
+
+      // 3) Check if user changed password after the token was issued
+      if (currentUser.changedPasswordAfter(decoded.iat)) {
+        return next();
+      }
+
+      // There is a logged-in user, set currentUser in res.locals
+      res.locals.user = currentUser;  // Making user data available in views
+      return next();
+    } catch (err) {
+      return next();
+    }
+  }
+  next();
+};
+
+

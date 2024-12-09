@@ -14,7 +14,8 @@ exports.getPreferencesPage = catchAsync(async (req, res, next) => {
   // Render the preferences page with user data
   res.status(200).render('preferences', {
     title: 'Update Your Preferences',
-    user
+    user,
+    alert: req.query.alert || ''  // Check if there's an alert in the query string
   });
 });
 
@@ -22,13 +23,18 @@ exports.getPreferencesPage = catchAsync(async (req, res, next) => {
 exports.updatePreferences = catchAsync(async (req, res, next) => {
   const { email, phone, address } = req.body;
 
+  // Validate input for preferences
+  if (typeof email !== 'boolean' || typeof phone !== 'boolean' || typeof address !== 'boolean') {
+    return next(new AppError('Invalid input for preferences!', 400));
+  }
+
   // Update permissions based on user input (permissions are boolean)
   const updatedUser = await User.findByIdAndUpdate(
     req.user.id,
     {
-      'permissions.email': email === 'true',
-      'permissions.phone': phone === 'true',
-      'permissions.address': address === 'true'
+      'permissions.email': email,
+      'permissions.phone': phone,
+      'permissions.address': address
     },
     {
       new: true,
@@ -41,11 +47,11 @@ exports.updatePreferences = catchAsync(async (req, res, next) => {
     return next(new AppError('User not found!', 404));
   }
 
-  // After updating, render preferences page again with updated data
+  // After updating, render preferences page again with updated data and success message
   res.status(200).render('preferences', {
     title: 'Preferences Updated',
     user: updatedUser,
-    alert: 'preferences' // Show success message
+    alert: 'preferences'  // Show success message after update
   });
 });
 
@@ -53,24 +59,25 @@ exports.updatePreferences = catchAsync(async (req, res, next) => {
 exports.getAccount = (req, res) => {
   res.status(200).render('account', {
     title: 'Your Account',
-    user: req.user
+    user: req.user // user is set from auth middleware
   });
 };
 
 // Update user data (name and email) and render updated account page
 exports.updateUserData = catchAsync(async (req, res, next) => {
+  const { name, email } = req.body;
+
+  // Update user name and email
   const updatedUser = await User.findByIdAndUpdate(
     req.user.id,
-    {
-      name: req.body.name,
-      email: req.body.email
-    },
+    { name, email },
     {
       new: true,
       runValidators: true
     }
   );
 
+  // If no user is found or update failed, return error
   if (!updatedUser) {
     return next(new AppError('User not found!', 404));
   }
@@ -80,3 +87,24 @@ exports.updateUserData = catchAsync(async (req, res, next) => {
     user: updatedUser
   });
 });
+
+exports.alerts = (req, res, next) => {
+  const { alert } = req.query;
+  if (alert === 'preferences') {
+    res.locals.alert = "Your preferences have been updated successfully!";
+  }
+  next(); // Pass control to the next middleware
+};
+
+exports.getOverview = async (req, res, next) => {
+  // Ensure the user is logged in (already set by the protect middleware)
+  if (!req.user) {
+    return next(new AppError('User not found!', 404));
+  }
+
+  // Render the overview page with user data (for example, preferences)
+  res.status(200).render('overview', {
+    title: 'Your Preferences Overview',
+    user: req.user  // The user is already added to req by the protect middleware
+  });
+};
