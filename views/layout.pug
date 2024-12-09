@@ -1,0 +1,26 @@
+doctype html
+html(lang='en')
+  head
+    title= title
+    meta(charset='UTF-8')
+    meta(name='viewport', content='width=device-width, initial-scale=1.0')
+    link(rel='stylesheet', href='/styles.css') 
+  body
+    header
+      h1= title
+      nav
+        ul
+          li
+            a(href='/') Home
+          li
+            a(href='/preferences') Update Preferences
+          li
+            a(href='/account') Account
+          if user
+            li
+              a(href='/logout') Logout
+          else
+            li
+              a(href='/login') Login
+
+    block content  // This is where the page-specific content will go

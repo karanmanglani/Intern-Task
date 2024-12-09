@@ -1,0 +1,12 @@
+extends layout
+
+block content
+  if alert
+    p.alert= alert
+
+  h2 Your Preferences Overview
+  p Email Permission: #{user.permissions.email ? 'Granted' : 'Denied'}
+  p Phone Permission: #{user.permissions.phone ? 'Granted' : 'Denied'}
+  p Address Permission: #{user.permissions.address ? 'Granted' : 'Denied'}
+
+  a(href='/preferences') Update Your Preferences

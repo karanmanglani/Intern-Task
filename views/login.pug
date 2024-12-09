@@ -1,0 +1,14 @@
+extends layout
+
+block content
+  h2 Log into your account
+  form(action='/login', method='POST')
+    div
+      label(for='email') Email:
+      input(type='email', name='email', required=true)
+    div
+      label(for='password') Password:
+      input(type='password', name='password', required=true)
+    button(type='submit') Login
+
+  a(href='/signup') Don't have an account? Sign up here

@@ -1,0 +1,14 @@
+extends layout
+
+block content
+  h2 Update Your Account Information
+  form(action='/update-user-data', method='POST')
+    div
+      label(for='name') Name:
+      input(type='text', name='name', value=user.name, required=true)
+    div
+      label(for='email') Email:
+      input(type='email', name='email', value=user.email, required=true)
+    button(type='submit') Update
+
+  a(href='/account') Back to Account
