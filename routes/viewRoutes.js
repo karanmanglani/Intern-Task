@@ -5,14 +5,7 @@ const authController = require('../controllers/authController');
 const router = express.Router();
 
 // Show landing page if user is not logged in
-router.get('/', authController.isLoggedIn, (req, res) => {
-  if (!req.user) {
-    // User is not logged in, show landing page
-    return res.render('landing', { title: 'Welcome' });
-  }
-  // If user is logged in, redirect to overview page
-  return res.redirect('/overview');
-});
+router.get('/', authController.isLoggedIn, viewsController.getLandingPage);
 
 // Render the overview page with user preferences
 router.get('/overview', authController.protect, viewsController.getOverview);
@@ -31,5 +24,9 @@ router.post('/update-user-data', authController.protect, viewsController.updateU
 
 // Sign up page
 router.get('/signup', viewsController.getSignupPage);  // Renders the signup page
+router.get('/login',viewsController.getLoginPage);
+
+router.post('/update-:fieldName', authController.protect,viewsController.updateField);
+router.post('/delete-:fieldName', authController.protect,viewsController.deleteField);
 
 module.exports = router;

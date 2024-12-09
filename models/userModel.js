@@ -2,35 +2,85 @@ const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcryptjs');
 
+async function emailValidator(value) {
+  // Check if the email is provided and is in the correct format
+  if (value && !validator.isEmail(value)) {
+    throw new Error('Please provide a valid email address.');
+  }
+  
+  // If email is provided, ensure it is unique (only check if not null)
+  if (value) {
+    const existingUser = await mongoose.models.User.findOne({ email: value });
+    if (existingUser) {
+      throw new Error('Email is already registered. Please use a different email.');
+    }
+  }
+
+  return true; // Validation passed
+}
+
+async function phoneValidator(value) {
+  // Validate phone number format if provided
+  if (value && !validator.isMobilePhone(value)) {
+    throw new Error('Please provide a valid phone number.');
+  }
+  
+  // If phone is provided, ensure it's unique (only check if not null)
+  if (value) {
+    const existingUser = await mongoose.models.User.findOne({ phone: value });
+    if (existingUser) {
+      throw new Error('Phone number is already registered. Please use a different phone number.');
+    }
+  }
+
+  return true; // Validation passed
+}
+
 const userSchema = new mongoose.Schema({
-  username: {
-    type: String,
-    required: [true, 'Please provide a username'],
-    unique: true, // Ensure unique usernames
-    minlength: [3, 'Username must be at least 3 characters'],
-    maxlength: [20, 'Username cannot be more than 20 characters'],
-  },
   name: {
     type: String,
     required: [true, 'Please tell us your name!']
   },
+  username: {
+    type: String,
+    required: [true, 'Please provide a username'],
+    unique: true
+  },
   email: {
     type: String,
+    unique: false,
+    validate: {
+      validator: emailValidator, // Custom email validation
+      message: '{VALUE} is not a valid email or it already exists.'
+    },
     lowercase: true,
-    unique: true,  // Still enforce uniqueness, but will handle null values separately
-    validate: [validator.isEmail, 'Please provide a valid email'],
-    sparse: true // This allows for multiple documents to have null email
+    required: false,  // Email is optional, handled manually in signup logic
   },
   phone: {
-    type: String
+    type: String,
+    validate: {
+      validator: phoneValidator, // Custom phone validation
+      message: '{VALUE} is not a valid phone number or it already exists.'
+    },
+    default: null,
   },
   address: {
-    type: String
+    type: String,
+    default: null, // Allow null by default
   },
   permissions: {
-    email: { type: Boolean, default: false },
-    phone: { type: Boolean, default: false },
-    address: { type: Boolean, default: false }
+    email: {
+      type: Boolean,
+      default: false
+    },
+    phone: {
+      type: Boolean,
+      default: false
+    },
+    address: {
+      type: Boolean,
+      default: false
+    }
   },
   role: {
     type: String,
@@ -60,6 +110,8 @@ const userSchema = new mongoose.Schema({
     select: false
   }
 });
+
+
 
 // Middleware to hash password before saving
 userSchema.pre('save', async function (next) {

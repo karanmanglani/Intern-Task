@@ -10,17 +10,18 @@ html(lang='en')
       h1= title
       nav
         ul
-          li
-            a(href='/') Home
-          li
-            a(href='/preferences') Update Preferences
-          li
-            a(href='/account') Account
           if user
             li
-              a(href='/logout') Logout
+              a(href='/overview') Overview
+            li
+              a(href='/preferences') Update Preferences
+            li
+              a(href='/account') Account
           else
             li
               a(href='/login') Login
+            li
+              a(href='/signup') Signup
+          
 
     block content  // This is where the page-specific content will go

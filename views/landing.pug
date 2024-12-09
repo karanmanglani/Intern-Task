@@ -3,7 +3,19 @@ extends layout
 block content
   h1 Welcome to the Preferences Sharing Interface
 
-  p Please sign up or log in to proceed.
-
-  a(href='/login') Login
-  a(href='/signup') Sign Up
+  // If the user is logged in, display a personalized message
+  if user
+    h2 Hello, #{user.name}!
+    p Here are your shared preferences:
+    ul
+      li Email Sharing: #{user.permissions.email ? 'Enabled' : 'Disabled'}
+      li Phone Sharing: #{user.permissions.phone ? 'Enabled' : 'Disabled'}
+      li Address Sharing: #{user.permissions.address ? 'Enabled' : 'Disabled'}
+    p Want to update your preferences or view your account?
+    a(href='/preferences') Update Preferences
+    a(href='/account') View Account
+  else
+    // If the user is not logged in, display the sign-up and login options
+    p Please sign up or log in to proceed.
+    a(href='/login') Login
+    a(href='/signup') Sign Up

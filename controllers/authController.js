@@ -19,9 +19,10 @@ const createSendToken = (user, statusCode, req, res) => {
 
   // Set the JWT cookie with the token
   res.cookie('jwt', token, {
-    expires: new Date(Date.now() + days * 24 * 60 * 60 * 1000),
-    httpOnly: true,
-    secure: req.secure || req.headers['x-forwarded-proto'] === 'https'
+    expires: new Date(Date.now() + days * 24 * 60 * 60 * 1000),  // Adjust expiration date
+    httpOnly: true,  // Ensures the cookie is not accessible via JS
+    // secure: req.secure || req.headers['x-forwarded-proto'] === 'https',  // Ensure it's secure for HTTPS
+    secure: false
   });
 
   // Remove password from the user object before sending it
@@ -35,44 +36,46 @@ const createSendToken = (user, statusCode, req, res) => {
   });
 };
 
+
 // Signup for regular users
 exports.signup = catchAsync(async (req, res, next) => {
-  const { username, email, phone, address, password, passwordConfirm, emailPermission, phonePermission, addressPermission ,name} = req.body;
-
-  // Check if the email or username already exists in the database
-  const existingUser = await User.findOne({ username });
-  if (existingUser) {
-    return next(new AppError('Username is already taken. Please choose a different username.', 400));
-  }
-
-  // Check if passwords match
-  if (password !== passwordConfirm) {
-    return next(new AppError('Passwords do not match!', 400));
-  }
+  const {
+    username,
+    name,
+    email,
+    phone,
+    address,
+    password,
+    passwordConfirm,
+    emailPermission,
+    phonePermission,
+    addressPermission,
+  } = req.body;
 
   // Create a new user
   const newUser = await User.create({
     username,
     name,
-    email: emailPermission === 'true' ? email : undefined,  // Store email only if permission is granted
-    phone: phonePermission === 'true' ? phone : undefined,  // Store phone only if permission is granted
-    address: addressPermission === 'true' ? address : undefined, // Store address only if permission is granted
+    email: emailPermission === 'true' ? email : null, // Set to null if permission not granted
+    phone: phonePermission === 'true' ? phone : null, // Set to null if permission not granted
+    address: addressPermission === 'true' ? address : null, // Set to null if permission not granted
     password,
     passwordConfirm,
     permissions: {
       email: emailPermission === 'true',
       phone: phonePermission === 'true',
       address: addressPermission === 'true',
-    }
+    },
   });
 
-  // Send the token and redirect to the overview page
+  // Send response and handle redirection
   createSendToken(newUser, 201, req, res);
 });
 
 
 
-// Login for users and admins
+
+// Login for users
 exports.login = catchAsync(async (req, res, next) => {
   const { username, password } = req.body;
 
@@ -80,7 +83,7 @@ exports.login = catchAsync(async (req, res, next) => {
     return next(new AppError('Please provide a username and password!', 400));
   }
 
-  // Find user by username (not email)
+  // Find user by username
   const user = await User.findOne({ username }).select('+password');
 
   if (!user || !(await user.correctPassword(password, user.password))) {
@@ -90,6 +93,7 @@ exports.login = catchAsync(async (req, res, next) => {
   // If everything is ok, send token and data
   createSendToken(user, 200, req, res);
 });
+
 
 // Logout
 exports.logout = (req, res) => {
@@ -129,9 +133,6 @@ exports.protect = catchAsync(async (req, res, next) => {
       return next(new AppError('The user belonging to this token does no longer exist.', 401));
     }
 
-    if (currentUser.changedPasswordAfter(decoded.iat)) {
-      return next(new AppError('User recently changed password! Please log in again.', 401));
-    }
 
     req.user = currentUser;
     next();
@@ -174,29 +175,41 @@ exports.deleteUser = catchAsync(async (req, res, next) => {
 });
 
 // Check if the user is logged in (checks for a valid JWT)
+// authController.js
+
+// Middleware to check if the user is logged in (similar to protect but no access restriction)
 exports.isLoggedIn = async (req, res, next) => {
-  if (req.cookies.jwt) {
+  let token;
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer')
+  ) {
+    token = req.headers.authorization.split(' ')[1];
+  } else if (req.cookies.jwt) {
+    token = req.cookies.jwt;
+  }
+  if (token) {
     try {
       // 1) Verify the token
-      const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
+      const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
 
-      // 2) Check if user still exists
+      // 2) Check if the user still exists
       const currentUser = await User.findById(decoded.id);
-      if (!currentUser) {
-        return next();
-      }
+      if (!currentUser) return next(); // Proceed if no user found
 
-      // 3) Check if user changed password after the token was issued
-      if (currentUser.changedPasswordAfter(decoded.iat)) {
-        return next();
-      }
+      // 3) Check if the user changed password after the token was issued
+      if (currentUser.changedPasswordAfter(decoded.iat)) return next(); // Proceed if password was changed
 
-      // There is a logged-in user, set currentUser in res.locals
-      res.locals.user = currentUser;  // Making user data available in views
-      return next();
+      // 4) Add the user to res.locals for use in views
+      req.user = currentUser;
+      res.locals.user = currentUser;
+      return next(); // Proceed to next middleware/route
     } catch (err) {
-      return next();
+      return next(); // Proceed if error occurs (user might not be logged in)
     }
+  } else {
+    return next(); // No JWT cookie, proceed without user
   }
-  next();
 };
+
+
