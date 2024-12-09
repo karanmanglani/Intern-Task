@@ -69,7 +69,7 @@ app.use((req, res, next) => {
 });
 
 // 3) ROUTES
-app.use('/', viewRouter);
+// app.use('/', viewRouter);
 
 
 app.all('*', (req, res, next) => {
