@@ -1,19 +1,25 @@
-const crypto = require('crypto');
 const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
+  username: {
+    type: String,
+    required: [true, 'Please provide a username'],
+    unique: true, // Ensure unique usernames
+    minlength: [3, 'Username must be at least 3 characters'],
+    maxlength: [20, 'Username cannot be more than 20 characters'],
+  },
   name: {
     type: String,
     required: [true, 'Please tell us your name!']
   },
   email: {
     type: String,
-    required: [true, 'Please provide your email'],
-    unique: true,
     lowercase: true,
-    validate: [validator.isEmail, 'Please provide a valid email']
+    unique: true,  // Still enforce uniqueness, but will handle null values separately
+    validate: [validator.isEmail, 'Please provide a valid email'],
+    sparse: true // This allows for multiple documents to have null email
   },
   phone: {
     type: String
@@ -22,18 +28,9 @@ const userSchema = new mongoose.Schema({
     type: String
   },
   permissions: {
-    email: {
-      type: Boolean,
-      default: false
-    },
-    phone: {
-      type: Boolean,
-      default: false
-    },
-    address: {
-      type: Boolean,
-      default: false
-    }
+    email: { type: Boolean, default: false },
+    phone: { type: Boolean, default: false },
+    address: { type: Boolean, default: false }
   },
   role: {
     type: String,
@@ -72,57 +69,28 @@ userSchema.pre('save', async function (next) {
   next();
 });
 
-// Middleware to set passwordChangedAt
-userSchema.pre('save', function (next) {
-  if (!this.isModified('password') || this.isNew) return next();
-  this.passwordChangedAt = Date.now() - 1000;
-  next();
-});
-
-// Exclude inactive users from queries
-userSchema.pre(/^find/, function (next) {
-  this.find({ active: { $ne: false } });
-  next();
-});
-
 // Instance method to check password correctness
 userSchema.methods.correctPassword = async function (candidatePassword, userPassword) {
   return await bcrypt.compare(candidatePassword, userPassword);
 };
 
-// Instance method to check if password was changed after a token was issued
-userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
-  if (this.passwordChangedAt) {
-    const changedTimestamp = parseInt(this.passwordChangedAt.getTime() / 1000, 10);
-    return JWTTimestamp < changedTimestamp;
-  }
-  return false;
-};
-
 // Method to update permissions and remove specific data
 userSchema.methods.updatePermissions = async function (updatedPermissions) {
-  // Update permissions
   this.permissions = { ...this.permissions, ...updatedPermissions };
-
-  // Remove data from the database if permission is revoked
   if (!this.permissions.email) this.email = undefined;
   if (!this.permissions.phone) this.phone = undefined;
   if (!this.permissions.address) this.address = undefined;
 
-  // Save the updated document
   await this.save();
 };
 
 // Method to initialize permissions based on user input
 userSchema.methods.initializePermissions = async function (initialPermissions) {
-  // Set permissions and clear any fields not allowed
   this.permissions = { ...initialPermissions };
-
   if (!this.permissions.email) this.email = undefined;
   if (!this.permissions.phone) this.phone = undefined;
   if (!this.permissions.address) this.address = undefined;
 
-  // Save the updated document
   await this.save();
 };
 

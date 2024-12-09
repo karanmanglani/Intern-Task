@@ -1,0 +1,69 @@
+extends layout
+
+block content
+  h1 Welcome to the Preferences Sharing Interface
+
+  // Pop-up Modal for permissions (will show automatically)
+  .modal#permissionModal
+    .modal-content
+      h2 Permissions
+      p Please provide your preferences for sharing the following information:
+
+      // Email permission with explanation
+      div
+        label(for="email") Allow Email Sharing:
+        input#emailToggle(type="checkbox", name="email", value="true")
+        p This data is required to send you account-related updates and notifications.
+
+      // Phone permission with explanation
+      div
+        label(for="phone") Allow Phone Sharing:
+        input#phoneToggle(type="checkbox", name="phone", value="true")
+        p This data will be used to send you verification codes and updates.
+
+      // Address permission with explanation
+      div
+        label(for="address") Allow Address Sharing:
+        input#addressToggle(type="checkbox", name="address", value="true")
+        p This data will help us verify your identity and provide personalized services.
+
+      // Confirm and close modal
+      button#confirmPreferences Confirm Preferences
+      button#closeModal Close
+
+  // Sign-up form
+  .form-container
+    form(action="/api/v1/users/signup", method="POST")
+      div
+        label(for="username") Username:
+        input#username(type="text", name="username", required=true, placeholder="Choose a unique username")
+        span#usernameFeedback
+
+      div
+        label(for="name") Name:
+        input#name(type="text", name="name", required=true)
+
+      div
+        label(for="email") Email:
+        input#email(type="email", name="email", required=true, placeholder="Provide a valid email address for updates")
+
+      div
+        label(for="phone") Phone Number:
+        input#phone(type="text", name="phone", placeholder="Enter phone number for verification (if enabled)")
+
+      div
+        label(for="address") Address:
+        input#address(type="text", name="address", placeholder="Enter your address (if enabled)")
+
+      div
+        label(for="password") Password:
+        input#password(type="password", name="password", required=true)
+
+      div
+        label(for="passwordConfirm") Confirm Password:
+        input#passwordConfirm(type="password", name="passwordConfirm", required=true)
+
+      button#submitButton(type="submit", disabled=true) Sign Up
+
+  // Include external JS file for modal behavior and form handling
+  script(src='/js/signup.js')

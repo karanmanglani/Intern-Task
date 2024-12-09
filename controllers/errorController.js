@@ -104,3 +104,20 @@ module.exports = (err, req, res, next) => {
     sendErrorProd(error, req, res);
   }
 };
+
+// viewsController.js
+exports.getSignupPage = (req, res) => {
+  res.status(200).render('signup', { title: 'Sign Up' });
+};
+
+
+module.exports = (err, req, res, next) => {
+  err.statusCode = err.statusCode || 500;
+  err.status = err.status || 'error';
+
+  if (process.env.NODE_ENV === 'development') {
+    sendErrorDev(err, req, res);
+  } else if (process.env.NODE_ENV === 'production') {
+    sendErrorProd(err, req, res);
+  }
+};

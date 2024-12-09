@@ -84,3 +84,29 @@ const filterObj = (obj, ...allowedFields) => {
   });
   return newObj;
 };
+
+exports.checkUsernameAvailability = catchAsync(async (req, res, next) => {
+  const { username } = req.params;
+
+  console.log('Checking availability for username:', username);  // Log username being checked
+
+  // Check if the username already exists in the database (exact match)
+  const existingUser = await User.findOne({ username: username });
+
+  if (existingUser) {
+    console.log('Username already exists');
+    return res.status(200).json({
+      status: 'success',
+      data: { isAvailable: false }  // Username is already taken
+    });
+  }
+
+  console.log('Username is available');
+  return res.status(200).json({
+    status: 'success',
+    data: { isAvailable: true }  // Username is available
+  });
+});
+
+
+

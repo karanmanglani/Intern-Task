@@ -108,3 +108,8 @@ exports.getOverview = async (req, res, next) => {
     user: req.user  // The user is already added to req by the protect middleware
   });
 };
+
+// viewsController.js
+exports.getSignupPage = (req, res) => {
+  res.status(200).render('signup', { title: 'Sign Up' });
+};

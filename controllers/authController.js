@@ -8,23 +8,26 @@ const AppError = require('./../utils/appError');
 
 const signToken = (id, role) => {
   return jwt.sign({ id, role }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN
+    expiresIn: process.env.JWT_EXPIRES_IN // Token expiration
   });
 };
 
 const createSendToken = (user, statusCode, req, res) => {
   const token = signToken(user._id, user.role);
+  const expiresIn = process.env.JWT_EXPIRES_IN;
+  const days = parseInt(expiresIn, 10);
 
+  // Set the JWT cookie with the token
   res.cookie('jwt', token, {
-    expires: new Date(
-      Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
-    ),
+    expires: new Date(Date.now() + days * 24 * 60 * 60 * 1000),
     httpOnly: true,
     secure: req.secure || req.headers['x-forwarded-proto'] === 'https'
   });
 
-  user.password = undefined; // Remove password from output
+  // Remove password from the user object before sending it
+  user.password = undefined;
 
+  // Send the response with status and token data (success response)
   res.status(statusCode).json({
     status: 'success',
     token,
@@ -34,38 +37,57 @@ const createSendToken = (user, statusCode, req, res) => {
 
 // Signup for regular users
 exports.signup = catchAsync(async (req, res, next) => {
+  const { username, email, phone, address, password, passwordConfirm, emailPermission, phonePermission, addressPermission ,name} = req.body;
+
+  // Check if the email or username already exists in the database
+  const existingUser = await User.findOne({ username });
+  if (existingUser) {
+    return next(new AppError('Username is already taken. Please choose a different username.', 400));
+  }
+
+  // Check if passwords match
+  if (password !== passwordConfirm) {
+    return next(new AppError('Passwords do not match!', 400));
+  }
+
+  // Create a new user
   const newUser = await User.create({
-    name: req.body.name,
-    email: req.body.email,
-    phone: req.body.phone || undefined,
-    address: req.body.address || undefined,
-    password: req.body.password,
-    passwordConfirm: req.body.passwordConfirm,
+    username,
+    name,
+    email: emailPermission === 'true' ? email : undefined,  // Store email only if permission is granted
+    phone: phonePermission === 'true' ? phone : undefined,  // Store phone only if permission is granted
+    address: addressPermission === 'true' ? address : undefined, // Store address only if permission is granted
+    password,
+    passwordConfirm,
     permissions: {
-      email: req.body.permissions?.email || false,
-      phone: req.body.permissions?.phone || false,
-      address: req.body.permissions?.address || false
+      email: emailPermission === 'true',
+      phone: phonePermission === 'true',
+      address: addressPermission === 'true',
     }
   });
 
+  // Send the token and redirect to the overview page
   createSendToken(newUser, 201, req, res);
 });
 
+
+
 // Login for users and admins
 exports.login = catchAsync(async (req, res, next) => {
-  const { email, password, role = 'user' } = req.body;
+  const { username, password } = req.body;
 
-  if (!email || !password) {
-    return next(new AppError('Please provide email and password!', 400));
+  if (!username || !password) {
+    return next(new AppError('Please provide a username and password!', 400));
   }
 
-  const model = role === 'admin' ? Admin : User;
-  const user = await model.findOne({ email }).select('+password');
+  // Find user by username (not email)
+  const user = await User.findOne({ username }).select('+password');
 
   if (!user || !(await user.correctPassword(password, user.password))) {
-    return next(new AppError('Incorrect email or password', 401));
+    return next(new AppError('Incorrect username or password', 401));
   }
 
+  // If everything is ok, send token and data
   createSendToken(user, 200, req, res);
 });
 
@@ -78,8 +100,12 @@ exports.logout = (req, res) => {
   res.status(200).json({ status: 'success' });
 };
 
-// Protect routes
+// Protect middleware (skip for username availability route)
 exports.protect = catchAsync(async (req, res, next) => {
+  if (req.originalUrl.startsWith('/api/v1/users/check-username')) {
+    return next();  // Skip authentication for the check-username route
+  }
+
   let token;
   if (
     req.headers.authorization &&
@@ -94,21 +120,30 @@ exports.protect = catchAsync(async (req, res, next) => {
     return next(new AppError('You are not logged in! Please log in to get access.', 401));
   }
 
-  const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
-  const model = decoded.role === 'admin' ? Admin : User;
-  const currentUser = await model.findById(decoded.id);
+  try {
+    const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+    const model = decoded.role === 'admin' ? Admin : User;
+    const currentUser = await model.findById(decoded.id);
 
-  if (!currentUser) {
-    return next(new AppError('The user belonging to this token does no longer exist.', 401));
+    if (!currentUser) {
+      return next(new AppError('The user belonging to this token does no longer exist.', 401));
+    }
+
+    if (currentUser.changedPasswordAfter(decoded.iat)) {
+      return next(new AppError('User recently changed password! Please log in again.', 401));
+    }
+
+    req.user = currentUser;
+    next();
+  } catch (err) {
+    if (err.name === 'TokenExpiredError') {
+      return next(new AppError('Your session has expired. Please log in again.', 401));
+    }
+    return next(err);
   }
-
-  if (currentUser.changedPasswordAfter(decoded.iat)) {
-    return next(new AppError('User recently changed password! Please log in again.', 401));
-  }
-
-  req.user = currentUser;
-  next();
 });
+
+
 
 // Restrict routes to specific roles
 exports.restrictTo = (...roles) => {
@@ -122,7 +157,7 @@ exports.restrictTo = (...roles) => {
 
 // Admin-specific functions
 exports.getAllUsers = catchAsync(async (req, res, next) => {
-  const users = await User.find({}, { name: 1, email: 1, phone: 1, address: 1, permissions: 1 });
+  const users = await User.find({}, { username: 1, name: 1, email: 1, phone: 1, address: 1, permissions: 1 });
   res.status(200).json({
     status: 'success',
     results: users.length,
@@ -165,5 +200,3 @@ exports.isLoggedIn = async (req, res, next) => {
   }
   next();
 };
-
-
