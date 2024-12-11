@@ -1,34 +1,35 @@
 extends layout
 
 block content
-  h2 Update Your Preferences
-  form#preferencesForm(action='/update-preferences', method='POST')
-    div
-      label(for='emailCheckbox') Allow Email Sharing:
-      input.permission-checkbox(type='checkbox', name='email', value='true', checked=user.permissions.email, data-field='email', id='emailCheckbox')
-    div
-      label(for='phoneCheckbox') Allow Phone Number Sharing:
-      input.permission-checkbox(type='checkbox', name='phone', value='true', checked=user.permissions.phone, data-field='phone', id='phoneCheckbox')
-    div
-      label(for='addressCheckbox') Allow Address Sharing:
-      input.permission-checkbox(type='checkbox', name='address', value='true', checked=user.permissions.address, data-field='address', id='addressCheckbox')
-    
-    button(type='submit') Save Preferences
+  .container
+    h2 Update Your Preferences
+    form#preferencesForm(action='/update-preferences', method='POST')
+      div
+        label(for='emailCheckbox') Allow Email Sharing:
+        input.permission-checkbox(type='checkbox', name='email', value='true', checked=user.permissions.email, data-field='email', id='emailCheckbox')
+      div
+        label(for='phoneCheckbox') Allow Phone Number Sharing:
+        input.permission-checkbox(type='checkbox', name='phone', value='true', checked=user.permissions.phone, data-field='phone', id='phoneCheckbox')
+      div
+        label(for='addressCheckbox') Allow Address Sharing:
+        input.permission-checkbox(type='checkbox', name='address', value='true', checked=user.permissions.address, data-field='address', id='addressCheckbox')
+      
+      button(type='submit') Save Preferences
 
-  if alert
-    p.alert= alert
+    if alert
+      p.alert= alert
 
-  // Modal for collecting data dynamically
-  .modal#dataModal
-    .modal-content
-      h3#modalTitle Please provide the required information
-      p#modalDescription Enter the value for the field you selected.
-      form#dataForm
-        div
-          label(for='dataInput') Enter Value:
-          input#dataInput(type='text', placeholder='Enter your data here', required)
-        p#modalErrorMessage(style='color: red;') // Placeholder for error messages
-        button(type='button', id='modalSaveButton') Save
-        button(type='button', id='modalCloseButton') Close
+    // Modal for collecting data dynamically
+    .modal#dataModal(style='display: none;')
+      .modal-content
+        h3#modalTitle Please provide the required information
+        p#modalDescription Enter the value for the field you selected.
+        form#dataForm
+          div
+            label(for='dataInput') Enter Value:
+            input#dataInput(type='text', placeholder='Enter your data here', required)
+          p#modalErrorMessage(style='color: red;')
+          button(type='button', id='modalSaveButton') Save
+          button(type='button', id='modalCloseButton') Close
 
   script(src='/js/preferences.js')
