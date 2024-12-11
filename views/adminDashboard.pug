@@ -1,0 +1,12 @@
+extends adminLayout
+
+block content
+  h1 Welcome to the Admin Dashboard
+
+  if admin
+    p Hello, #{admin.username}!
+    p You can manage users from here.
+    a(href='/admin/users') View Users
+  else
+    p You need to log in first.
+    a(href='/admin/login') Login

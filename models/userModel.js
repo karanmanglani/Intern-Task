@@ -20,11 +20,6 @@ async function emailValidator(value) {
 }
 
 async function phoneValidator(value) {
-  // Validate phone number format if provided
-  if (value && !validator.isMobilePhone(value)) {
-    throw new Error('Please provide a valid phone number.');
-  }
-  
   // If phone is provided, ensure it's unique (only check if not null)
   if (value) {
     const existingUser = await mongoose.models.User.findOne({ phone: value });

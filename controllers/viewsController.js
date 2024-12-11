@@ -1,4 +1,5 @@
 const User = require('../models/userModel');
+const Admin = require('../models/adminModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 
@@ -176,5 +177,75 @@ exports.deleteField = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: 'success',
     message: `${fieldName} removed successfully!`,
+  });
+});
+
+// Render Admin Login Page
+exports.getAdminLoginPage = (req, res) => {
+  res.status(200).render('adminLogin', {
+    title: 'Admin Login'
+  });
+};
+
+// Render Admin Signup Page
+exports.getAdminSignupPage = (req, res) => {
+  res.status(200).render('adminSignup', {
+    title: 'Admin Sign Up'
+  });
+};
+
+// Admin Dashboard
+exports.getAdminDashboard = catchAsync(async (req, res, next) => {
+  // Fetch admin info from `req.user` (logged in admin)
+  const admin = req.user;
+
+  res.status(200).render('adminDashboard', {
+    title: 'Admin Dashboard',
+    admin
+  });
+});
+
+// View All Users
+exports.getAllUsers = catchAsync(async (req, res, next) => {
+  const users = await User.find();
+
+  res.status(200).render('adminUsers', {
+    title: 'Manage Users',
+    users
+  });
+});
+
+// Render User Profile
+exports.getUser = catchAsync(async (req, res, next) => {
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+    return next(new AppError('No user found with that ID', 404));
+  }
+
+  res.status(200).render('adminUserDetail', {
+    title: `User Details for ${user.username}`,
+    user
+  });
+});
+
+// Render Add User Page
+exports.getAddUserPage = (req, res) => {
+  res.status(200).render('adminAddUser', {
+    title: 'Add New User'
+  });
+};
+
+// Render User Edit Page
+exports.getEditUserPage = catchAsync(async (req, res, next) => {
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+    return next(new AppError('No user found with that ID', 404));
+  }
+
+  res.status(200).render('adminEditUser', {
+    title: 'Edit User',
+    user
   });
 });

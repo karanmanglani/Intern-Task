@@ -75,6 +75,7 @@ app.use((req, res, next) => {
 // 3) ROUTES
 app.use('/', viewRouter); // Use the viewRouter for handling routes
 app.use('/api/v1/users', userRouter);
+app.use('/api/v1/admin',adminRouter)
 // Handle undefined routes (404 errors)
 app.all('*', (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));

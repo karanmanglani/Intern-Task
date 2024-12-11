@@ -1,0 +1,22 @@
+extends adminLayout
+
+block content
+  h1 Admin Sign Up
+
+  form(action='/api/v1/admin/signup', method='POST')
+    div
+      label(for='username') Username:
+      input#username(type='text', name='username', required=true, placeholder="Choose a unique username")
+      span#usernameFeedback
+
+    div
+      label(for='password') Password:
+      input#password(type='password', name='password', required=true, placeholder="Enter your password")
+
+    div
+      label(for='passwordConfirm') Confirm Password:
+      input#passwordConfirm(type='password', name='passwordConfirm', required=true, placeholder="Confirm your password")
+
+    button(type='submit', disabled=true) Sign Up
+
+  script(src='/js/adminSignup.js')

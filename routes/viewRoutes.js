@@ -29,4 +29,17 @@ router.get('/login',viewsController.getLoginPage);
 router.post('/update-:fieldName', authController.protect,viewsController.updateField);
 router.post('/delete-:fieldName', authController.protect,viewsController.deleteField);
 
+// Admin routes
+router.get('/admin/login', viewsController.getAdminLoginPage);
+router.get('/admin/signup', viewsController.getAdminSignupPage);
+
+// Admin Dashboard (protected route, requires admin role)
+router.get('/admin/dashboard', authController.protect, authController.restrictTo('admin'), viewsController.getAdminDashboard);
+
+// Admin User Management
+router.get('/admin/users', authController.protect, authController.restrictTo('admin'), viewsController.getAllUsers);
+router.get('/admin/users/add', authController.protect, authController.restrictTo('admin'), viewsController.getAddUserPage);
+router.get('/admin/users/:id', authController.protect, authController.restrictTo('admin'), viewsController.getUser);
+router.get('/admin/users/:id/edit', authController.protect, authController.restrictTo('admin'), viewsController.getEditUserPage);
+
 module.exports = router;

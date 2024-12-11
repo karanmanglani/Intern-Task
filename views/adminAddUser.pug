@@ -1,0 +1,43 @@
+extends layout
+
+block content
+  h1 Add New User
+
+  form(action='/api/v1/admin/users', method='POST')
+    div
+      label(for='username') Username:
+      input(type='text', name='username', required=true, placeholder="Enter a unique username")
+
+    div
+      label(for='name') Full Name:
+      input(type='text', name='name', required=true, placeholder="Enter the full name")
+
+    div
+      label(for='email') Email:
+      input(type='email', name='email', required=true, placeholder="Enter user's email")
+
+    div
+      label(for='phone') Phone Number:
+      input(type='text', name='phone', placeholder="Enter user's phone number")
+
+    div
+      label(for='address') Address:
+      input(type='text', name='address', placeholder="Enter user's address")
+
+    div
+      label(for='role') Role:
+      select(name='role')
+        option(value='user') User
+        option(value='admin') Admin
+
+    div
+      label(for='password') Password:
+      input(type='password', name='password', required=true, placeholder="Enter user's password")
+
+    div
+      label(for='passwordConfirm') Confirm Password:
+      input(type='password', name='passwordConfirm', required=true, placeholder="Confirm password")
+
+    button(type='submit') Add User
+
+  a(href='/admin/users') Back to Users

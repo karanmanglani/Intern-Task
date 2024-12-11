@@ -1,0 +1,23 @@
+extends adminLayout
+
+block content
+  h1 Admin Login
+
+  form(action='/api/v1/admin/login', method='POST')
+    div
+      label(for='username') Username:
+      input#username(type='text', name='username', required=true, placeholder="Enter your username")
+
+    div
+      label(for='password') Password:
+      input#password(type='password', name='password', required=true, placeholder="Enter your password")
+
+    button(type='submit') Log In
+
+    span#loginFeedback
+
+  p
+    | Don't have an account? 
+    a(href='/admin/signup') Sign up here.
+
+  script(src='/js/adminLogin.js')

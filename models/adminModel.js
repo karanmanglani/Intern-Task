@@ -1,16 +1,14 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
+// Import the User model for admin-specific actions on users
+const User = require('./userModel');
+
 const adminSchema = new mongoose.Schema({
-  name: {
+  username: {
     type: String,
-    required: [true, 'Please provide your name!']
-  },
-  email: {
-    type: String,
-    required: [true, 'Please provide your email!'],
-    unique: true,
-    lowercase: true
+    required: [true, 'Please provide a username!'],
+    unique: true
   },
   password: {
     type: String,
@@ -36,38 +34,49 @@ adminSchema.pre('save', async function (next) {
   next();
 });
 
-// Method to verify password
+// Instance method to verify password
 adminSchema.methods.correctPassword = async function (candidatePassword, adminPassword) {
   return await bcrypt.compare(candidatePassword, adminPassword);
 };
 
-// Method to update the last login timestamp
+// Instance method to update the last login timestamp
 adminSchema.methods.updateLastLogin = async function () {
   this.lastLogin = new Date();
   await this.save();
 };
 
-// Dashboard-specific methods (optional)
+// Admin-specific actions on users
 
-// Method to get all user data for the dashboard
+// Static method to get all users
 adminSchema.statics.getAllUsers = async function () {
-  const User = mongoose.model('User');
   return await User.find({}, { name: 1, email: 1, phone: 1, address: 1, permissions: 1 });
 };
 
-// Method to delete a specific user
+// Static method to get a single user by ID
+adminSchema.statics.getUserById = async function (userId) {
+  return await User.findById(userId, { name: 1, email: 1, phone: 1, address: 1, permissions: 1 });
+};
+
+// Static method to update a user by ID
+adminSchema.statics.updateUserById = async function (userId, updateData) {
+  return await User.findByIdAndUpdate(userId, updateData, {
+    new: true,
+    runValidators: true
+  });
+};
+
+// Static method to delete a specific user
 adminSchema.statics.deleteUserById = async function (userId) {
-  const User = mongoose.model('User');
   return await User.findByIdAndDelete(userId);
 };
 
-// Method to search users by name or email
+// Static method to search users by name, email, or username
 adminSchema.statics.searchUsers = async function (query) {
-  const User = mongoose.model('User');
   return await User.find({
     $or: [
       { name: { $regex: query, $options: 'i' } },
-      { email: { $regex: query, $options: 'i' } }
+      { email: { $regex: query, $options: 'i' } },
+      { username: { $regex: query, $options: 'i' } }
     ]
   });
 };
