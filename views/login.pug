@@ -1,19 +1,20 @@
 extends layout
 
 block content
-  h2 Login to Your Account
-  form#loginForm(action='/api/v1/users/login', method='POST')
-    div
-      label(for='username') Username:
-      input(type='text', name='username', id='username', required=true, placeholder="Enter your username")
+  .form-container
+    h2 Login to Your Account
+    form#loginForm(action='/api/v1/users/login', method='POST')
+      .form-group
+        label(for='username') Username:
+        input.input-field(type='text', name='username', id='username', required=true, placeholder="Enter your username")
 
-    div
-      label(for='password') Password:
-      input(type='password', name='password', id='password', required=true, placeholder="Enter your password")
+      .form-group
+        label(for='password') Password:
+        input.input-field(type='password', name='password', id='password', required=true, placeholder="Enter your password")
 
-    button(type='submit') Login
+      button.button-primary(type='submit') Login
 
-  if alert
-    p.alert= alert
+    if alert
+      p.alert= alert
 
   script(src='/js/login.js')
