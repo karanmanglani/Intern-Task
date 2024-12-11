@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const username = usernameInput.value;
 
     // Trigger the username check only after 3 characters
-    if (username.length >= 3) {
+    if (username.length >= 1) {
       try {
         const response = await fetch(`/api/v1/admin/check-username/${username}`);
         const result = await response.json();

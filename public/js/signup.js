@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const username = usernameInput.value;
   
       // Trigger the username check only after 3 characters
-      if (username.length >= 3) {
+      if (username.length >= 1) {
         try {
           console.log('Checking username availability for:', username);  // Log username being checked
   
