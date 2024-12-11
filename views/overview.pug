@@ -1,12 +1,18 @@
 extends layout
 
 block content
-  if alert
-    p.alert= alert
+  .container
+    if alert
+      p.alert= alert
 
-  h2 Your Preferences Overview
-  p Email Permission: #{user.permissions.email ? 'Granted' : 'Denied'}
-  p Phone Permission: #{user.permissions.phone ? 'Granted' : 'Denied'}
-  p Address Permission: #{user.permissions.address ? 'Granted' : 'Denied'}
+    h2 Your Preferences Overview
+    .preferences-list
+      p Email Permission: 
+        span.permission-status= user.permissions.email ? 'Granted' : 'Denied'
+      p Phone Permission: 
+        span.permission-status= user.permissions.phone ? 'Granted' : 'Denied'
+      p Address Permission: 
+        span.permission-status= user.permissions.address ? 'Granted' : 'Denied'
 
-  a(href='/preferences') Update Your Preferences
+    .button-container
+      a.button(href='/preferences') Update Your Preferences

@@ -1,15 +1,21 @@
 extends layout
 
 block content
-  h2 Your Account
-  p Name: #{user.name}
-  p Email: #{user.email}
+  .container
+    h2 Your Account
+    .account-details
+      p Name: #{user.name}
+      p Email: #{user.email}
 
-  h3 Your Permissions:
-    ul
-      li Email: #{user.permissions.email ? 'Granted' : 'Denied'}
-      li Phone: #{user.permissions.phone ? 'Granted' : 'Denied'}
-      li Address: #{user.permissions.address ? 'Granted' : 'Denied'}
+    h3 Your Permissions:
+      ul.permissions-list
+        li Email: 
+          span.permission-status= user.permissions.email ? 'Granted' : 'Denied'
+        li Phone: 
+          span.permission-status= user.permissions.phone ? 'Granted' : 'Denied'
+        li Address: 
+          span.permission-status= user.permissions.address ? 'Granted' : 'Denied'
 
-  a(href='/preferences') Update Preferences
-  a(href='/update-user-data') Update Name/Email
+    .button-container
+      a.button(href='/preferences') Update Preferences
+      a.button(href='/update-user-data') Update Name/Email

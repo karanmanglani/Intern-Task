@@ -345,3 +345,68 @@ input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focu
   font-size: 0.9rem;
   color: #e53e3e;
 }
+/* General container styling for both overview and account pages */
+.container {
+  max-width: 800px;
+  margin: 50px auto;
+  padding: 20px;
+  background-color: #fff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+
+/* Preferences and Account sections */
+.preferences-list, .account-details {
+  font-size: 1.1rem;
+  margin-bottom: 20px;
+}
+
+.permission-status {
+  font-weight: bold;
+  color: #4caf50; /* Green for granted permissions */
+}
+
+.permission-status:empty {
+  color: #f44336; /* Red for denied permissions */
+}
+
+/* List styling for permissions */
+.permissions-list {
+  list-style-type: none;
+  padding: 0;
+}
+
+.permissions-list li {
+  font-size: 1.1rem;
+  margin-bottom: 10px;
+}
+
+.permissions-list li span {
+  font-weight: bold;
+  color: #4caf50; /* Green for granted permissions */
+}
+
+.permissions-list li span:empty {
+  color: #f44336; /* Red for denied permissions */
+}
+
+/* Buttons for updating preferences */
+.button-container {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.button {
+  padding: 12px 20px;
+  background-color: #4caf50;
+  color: white;
+  border-radius: 5px;
+  text-decoration: none;
+  text-align: center;
+  transition: background-color 0.3s ease;
+}
+
+.button:hover {
+  background-color: #45a049;
+}
