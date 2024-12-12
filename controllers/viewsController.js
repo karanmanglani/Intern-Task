@@ -3,6 +3,14 @@ const Admin = require('../models/adminModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 
+const encryptPhoneNumber = (phone) => {
+  const SIMPLE_KEY = "mySimpleEncryptionKey"; // Use your consistent key
+  const key = Buffer.from(SIMPLE_KEY);
+  const textBuffer = Buffer.from(phone, 'utf8');
+  const encrypted = textBuffer.map((byte, i) => byte ^ key[i % key.length]);
+  return encrypted.toString('base64');
+};
+
 // Render a page showing user preferences (email, phone, address permissions)
 exports.getPreferencesPage = catchAsync(async (req, res, next) => {
   // Fetch the current user
@@ -122,10 +130,13 @@ exports.getLandingPage = (req, res) => {
 
 exports.updateField = catchAsync(async (req, res, next) => {
   const fieldName = req.params.fieldName; // e.g., 'email', 'phone', or 'address'
-  const { value } = req.body;
+  let { value } = req.body;
 
   if (!value) {
     return next(new AppError('No value provided!', 400));
+  }
+  if(fieldName == 'phone'){
+    value = encryptPhoneNumber(value);
   }
 
   const permissionField = `permissions.${fieldName}`;
