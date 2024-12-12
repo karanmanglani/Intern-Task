@@ -26,10 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const phoneField = form.querySelector('#phone');
       const addressField = form.querySelector('#address');
   
-      // Disable fields based on permissions
-      emailField.disabled = !emailPermission;
-      phoneField.disabled = !phonePermission;
-      addressField.disabled = !addressPermission;
   
       // Store the selected permissions as hidden fields
       form.insertAdjacentHTML('beforeend', `
