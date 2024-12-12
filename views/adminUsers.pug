@@ -13,6 +13,7 @@ block content
             th Name
             th Email
             th Phone
+            th Encrypted Phone Number
             th Address
         tbody
           each user in users
@@ -21,6 +22,7 @@ block content
               td= user.name
               td= user.email || 'N/A'
               td= user.getDecryptedPhone()|| 'N/A'
+              td= user.phone || 'N/A'
               td= user.address || 'N/A'
     else
       p No users found.
