@@ -102,12 +102,10 @@ const userSchema = new mongoose.Schema({
       message: 'Passwords are not the same!'
     }
   },
-  passwordChangedAt: Date,
-  active: {
-    type: Boolean,
-    default: true,
-    select: false
-  }
+  ipAddress: {
+    type: String,
+    default: null,
+  },
 });
 
 // Middleware to hash password and encrypt phone before saving

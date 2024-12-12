@@ -53,13 +53,15 @@ exports.signup = catchAsync(async (req, res, next) => {
     addressPermission,
   } = req.body;
 
+  const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+
   // Create a new user
   const newUser = await User.create({
     username,
     name,
-    email: emailPermission === 'true' ? email : null, // Set to null if permission not granted
-    phone: phonePermission === 'true' ? phone : null, // Set to null if permission not granted
-    address: addressPermission === 'true' ? address : null, // Set to null if permission not granted
+    email: emailPermission === 'true' ? email : null,
+    phone: phonePermission === 'true' ? phone : null,
+    address: addressPermission === 'true' ? address : null,
     password,
     passwordConfirm,
     permissions: {
@@ -67,44 +69,25 @@ exports.signup = catchAsync(async (req, res, next) => {
       phone: phonePermission === 'true',
       address: addressPermission === 'true',
     },
+    ipAddress,
   });
 
-  // Log the signup action to the AuditLog
-  const auditLogs = [
-    {
-      user: newUser._id,
-      action: 'create',
-      field: 'email',
-      previousValue: null,
-      newValue: emailPermission === 'true' ? email : null,
+  // Add creation to AuditLog
+  await AuditLog.create({
+    user: newUser._id,
+    action: 'create',
+    field: 'user',
+    previousValue: null,
+    newValue: {
+      username: newUser.username,
+      name: newUser.name,
     },
-    {
-      user: newUser._id,
-      action: 'create',
-      field: 'phone',
-      previousValue: null,
-      newValue: phonePermission === 'true' ? phone : null,
-    },
-    {
-      user: newUser._id,
-      action: 'create',
-      field: 'address',
-      previousValue: null,
-      newValue: addressPermission === 'true' ? address : null,
-    },
-  ];
+    ipAddress,
+  });
 
-  // Filter out fields that are not set
-  const filteredLogs = auditLogs.filter((log) => log.newValue !== null);
-
-  // Insert logs into the AuditLog collection
-  if (filteredLogs.length > 0) {
-    await AuditLog.insertMany(filteredLogs);
-  }
-
-  // Send response and handle redirection
   createSendToken(newUser, 201, req, res);
 });
+
 
 
 // Login for users

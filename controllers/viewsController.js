@@ -136,32 +136,28 @@ exports.updateField = catchAsync(async (req, res, next) => {
   if (!value) {
     return next(new AppError('No value provided!', 400));
   }
-
-  const permissionField = `permissions.${fieldName}`;
-
-  // Encrypt phone number if the field is 'phone'
   if (fieldName === 'phone') {
     value = encryptPhoneNumber(value);
   }
 
-  // Retrieve the current value of the field for logging purposes
-  const user = await User.findById(req.user.id);
-  if (!user) {
-    return next(new AppError('User not found!', 404));
-  }
+  const permissionField = `permissions.${fieldName}`;
+  const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
+  // Fetch the previous value for the field
+  const user = await User.findById(req.user.id);
   const previousValue = user[fieldName];
 
-  // Update the user's field and permission
+  // Update the user
   const updatedUser = await User.findByIdAndUpdate(
     req.user.id,
     {
       [fieldName]: value,
-      [permissionField]: true, // Ensure the permission is set to true
+      [permissionField]: true,
+      ipAddress, // Update IP address
     },
     {
       new: true,
-      runValidators: true, // Apply validation rules from the schema
+      runValidators: true,
     }
   );
 
@@ -169,13 +165,14 @@ exports.updateField = catchAsync(async (req, res, next) => {
     return next(new AppError('User not found!', 404));
   }
 
-  // Log the update to the AuditLog
+  // Add update action to AuditLog
   await AuditLog.create({
-    user: req.user.id,
+    user: updatedUser._id,
     action: 'update',
     field: fieldName,
-    previousValue: previousValue || null,
+    previousValue,
     newValue: value,
+    ipAddress,
   });
 
   res.status(200).json({
@@ -184,21 +181,24 @@ exports.updateField = catchAsync(async (req, res, next) => {
   });
 });
 
+
 exports.deleteField = catchAsync(async (req, res, next) => {
   const fieldName = req.params.fieldName; // e.g., 'email', 'phone', or 'address'
 
-  // Retrieve the current value of the field for logging purposes
-  const user = await User.findById(req.user.id);
-  if (!user) {
-    return next(new AppError('User not found!', 404));
-  }
+  const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
+  // Fetch the previous value for the field
+  const user = await User.findById(req.user.id);
   const previousValue = user[fieldName];
 
-  // Clear the field and disable the permission
+  // Update the user to clear the field and its permission
   const updatedUser = await User.findByIdAndUpdate(
     req.user.id,
-    { [fieldName]: null, [`permissions.${fieldName}`]: false },
+    {
+      [fieldName]: null,
+      [`permissions.${fieldName}`]: false,
+      ipAddress, // Update IP address
+    },
     { new: true }
   );
 
@@ -206,13 +206,14 @@ exports.deleteField = catchAsync(async (req, res, next) => {
     return next(new AppError('User not found!', 404));
   }
 
-  // Log the delete action to the AuditLog
+  // Add delete action to AuditLog
   await AuditLog.create({
-    user: req.user.id,
+    user: updatedUser._id,
     action: 'delete',
     field: fieldName,
-    previousValue: previousValue || null,
+    previousValue,
     newValue: null,
+    ipAddress,
   });
 
   res.status(200).json({
@@ -220,6 +221,7 @@ exports.deleteField = catchAsync(async (req, res, next) => {
     message: `${fieldName} removed successfully!`,
   });
 });
+
 
 
 // Render Admin Login Page
