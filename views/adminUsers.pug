@@ -20,7 +20,7 @@ block content
               td= user.username
               td= user.name
               td= user.email || 'N/A'
-              td= user.phone || 'N/A'
+              td= user.getDecryptedPhone()|| 'N/A'
               td= user.address || 'N/A'
     else
       p No users found.

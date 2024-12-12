@@ -2,35 +2,48 @@ const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcryptjs');
 
+// XOR-based Encryption
+const SIMPLE_KEY = "mySimpleEncryptionKey";
+
+function encrypt(text) {
+  const key = Buffer.from(SIMPLE_KEY);
+  const textBuffer = Buffer.from(text, 'utf8');
+  const encrypted = textBuffer.map((byte, i) => byte ^ key[i % key.length]);
+  return encrypted.toString('base64');
+}
+
+function decrypt(encodedText) {
+  const key = Buffer.from(SIMPLE_KEY);
+  const encryptedBuffer = Buffer.from(encodedText, 'base64');
+  const decrypted = encryptedBuffer.map((byte, i) => byte ^ key[i % key.length]);
+  return decrypted.toString('utf8');
+}
+
+// Validators
 async function emailValidator(value) {
-  // Check if the email is provided and is in the correct format
   if (value && !validator.isEmail(value)) {
     throw new Error('Please provide a valid email address.');
   }
-  
-  // If email is provided, ensure it is unique (only check if not null)
   if (value) {
     const existingUser = await mongoose.models.User.findOne({ email: value });
     if (existingUser) {
       throw new Error('Email is already registered. Please use a different email.');
     }
   }
-
-  return true; // Validation passed
+  return true;
 }
 
 async function phoneValidator(value) {
-  // If phone is provided, ensure it's unique (only check if not null)
   if (value) {
     const existingUser = await mongoose.models.User.findOne({ phone: value });
     if (existingUser) {
       throw new Error('Phone number is already registered. Please use a different phone number.');
     }
   }
-
-  return true; // Validation passed
+  return true;
 }
 
+// User Schema
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -45,37 +58,28 @@ const userSchema = new mongoose.Schema({
     type: String,
     unique: false,
     validate: {
-      validator: emailValidator, // Custom email validation
+      validator: emailValidator,
       message: '{VALUE} is not a valid email or it already exists.'
     },
     lowercase: true,
-    required: false,  // Email is optional, handled manually in signup logic
+    required: false,
   },
   phone: {
     type: String,
     validate: {
-      validator: phoneValidator, // Custom phone validation
+      validator: phoneValidator,
       message: '{VALUE} is not a valid phone number or it already exists.'
     },
-    default: null,
+    default: null
   },
   address: {
     type: String,
-    default: null, // Allow null by default
+    default: null,
   },
   permissions: {
-    email: {
-      type: Boolean,
-      default: false
-    },
-    phone: {
-      type: Boolean,
-      default: false
-    },
-    address: {
-      type: Boolean,
-      default: false
-    }
+    email: { type: Boolean, default: false },
+    phone: { type: Boolean, default: false },
+    address: { type: Boolean, default: false }
   },
   role: {
     type: String,
@@ -106,39 +110,29 @@ const userSchema = new mongoose.Schema({
   }
 });
 
-
-
-// Middleware to hash password before saving
+// Middleware to hash password and encrypt phone before saving
 userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
-  this.password = await bcrypt.hash(this.password, 12);
-  this.passwordConfirm = undefined;
+  if (this.isModified('password')) {
+    this.password = await bcrypt.hash(this.password, 12);
+    this.passwordConfirm = undefined;
+  }
+  if (this.isModified('phone') && this.phone) {
+    this.phone = encrypt(this.phone);
+  }
   next();
 });
+
+// Instance method to decrypt phone number
+userSchema.methods.getDecryptedPhone = function () {
+  if (this.phone) {
+    return decrypt(this.phone);
+  }
+  return null;
+};
 
 // Instance method to check password correctness
 userSchema.methods.correctPassword = async function (candidatePassword, userPassword) {
   return await bcrypt.compare(candidatePassword, userPassword);
-};
-
-// Method to update permissions and remove specific data
-userSchema.methods.updatePermissions = async function (updatedPermissions) {
-  this.permissions = { ...this.permissions, ...updatedPermissions };
-  if (!this.permissions.email) this.email = undefined;
-  if (!this.permissions.phone) this.phone = undefined;
-  if (!this.permissions.address) this.address = undefined;
-
-  await this.save();
-};
-
-// Method to initialize permissions based on user input
-userSchema.methods.initializePermissions = async function (initialPermissions) {
-  this.permissions = { ...initialPermissions };
-  if (!this.permissions.email) this.email = undefined;
-  if (!this.permissions.phone) this.phone = undefined;
-  if (!this.permissions.address) this.address = undefined;
-
-  await this.save();
 };
 
 const User = mongoose.model('User', userSchema);
