@@ -5,6 +5,7 @@ const User = require('./../models/userModel');
 const Admin = require('./../models/adminModel');
 const catchAsync = require('./../utils/catchAsync');
 const AppError = require('./../utils/appError');
+const AuditLog = require('./../models/auditLog');
 
 const signToken = (id, role) => {
   return jwt.sign({ id, role }, process.env.JWT_SECRET, {
@@ -68,11 +69,42 @@ exports.signup = catchAsync(async (req, res, next) => {
     },
   });
 
+  // Log the signup action to the AuditLog
+  const auditLogs = [
+    {
+      user: newUser._id,
+      action: 'create',
+      field: 'email',
+      previousValue: null,
+      newValue: emailPermission === 'true' ? email : null,
+    },
+    {
+      user: newUser._id,
+      action: 'create',
+      field: 'phone',
+      previousValue: null,
+      newValue: phonePermission === 'true' ? phone : null,
+    },
+    {
+      user: newUser._id,
+      action: 'create',
+      field: 'address',
+      previousValue: null,
+      newValue: addressPermission === 'true' ? address : null,
+    },
+  ];
+
+  // Filter out fields that are not set
+  const filteredLogs = auditLogs.filter((log) => log.newValue !== null);
+
+  // Insert logs into the AuditLog collection
+  if (filteredLogs.length > 0) {
+    await AuditLog.insertMany(filteredLogs);
+  }
+
   // Send response and handle redirection
   createSendToken(newUser, 201, req, res);
 });
-
-
 
 
 // Login for users

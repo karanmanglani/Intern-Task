@@ -2,6 +2,7 @@ const User = require('../models/userModel');
 const Admin = require('../models/adminModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
+const AuditLog = require('../models/auditLog');
 
 const encryptPhoneNumber = (phone) => {
   const SIMPLE_KEY = "mySimpleEncryptionKey"; // Use your consistent key
@@ -135,26 +136,32 @@ exports.updateField = catchAsync(async (req, res, next) => {
   if (!value) {
     return next(new AppError('No value provided!', 400));
   }
-  if(fieldName == 'phone'){
-    value = encryptPhoneNumber(value);
-  }
 
   const permissionField = `permissions.${fieldName}`;
 
-  // Log the request for debugging
-  console.log('Updating field:', fieldName);
-  console.log('Value:', value);
+  // Encrypt phone number if the field is 'phone'
+  if (fieldName === 'phone') {
+    value = encryptPhoneNumber(value);
+  }
 
-  // Update both the permission and the corresponding value
+  // Retrieve the current value of the field for logging purposes
+  const user = await User.findById(req.user.id);
+  if (!user) {
+    return next(new AppError('User not found!', 404));
+  }
+
+  const previousValue = user[fieldName];
+
+  // Update the user's field and permission
   const updatedUser = await User.findByIdAndUpdate(
     req.user.id,
     {
-      [fieldName]: value, // Update the field value (e.g., email)
-      [permissionField]: true // Ensure the permission is also set to true
+      [fieldName]: value,
+      [permissionField]: true, // Ensure the permission is set to true
     },
     {
       new: true,
-      runValidators: true // Apply validation rules from the schema
+      runValidators: true, // Apply validation rules from the schema
     }
   );
 
@@ -162,7 +169,14 @@ exports.updateField = catchAsync(async (req, res, next) => {
     return next(new AppError('User not found!', 404));
   }
 
-  console.log('Updated user:', updatedUser); // Debugging log
+  // Log the update to the AuditLog
+  await AuditLog.create({
+    user: req.user.id,
+    action: 'update',
+    field: fieldName,
+    previousValue: previousValue || null,
+    newValue: value,
+  });
 
   res.status(200).json({
     status: 'success',
@@ -170,14 +184,21 @@ exports.updateField = catchAsync(async (req, res, next) => {
   });
 });
 
-
-
 exports.deleteField = catchAsync(async (req, res, next) => {
   const fieldName = req.params.fieldName; // e.g., 'email', 'phone', or 'address'
 
+  // Retrieve the current value of the field for logging purposes
+  const user = await User.findById(req.user.id);
+  if (!user) {
+    return next(new AppError('User not found!', 404));
+  }
+
+  const previousValue = user[fieldName];
+
+  // Clear the field and disable the permission
   const updatedUser = await User.findByIdAndUpdate(
     req.user.id,
-    { [fieldName]: null, [`permissions.${fieldName}`]: false }, // Clear the field and disable the permission
+    { [fieldName]: null, [`permissions.${fieldName}`]: false },
     { new: true }
   );
 
@@ -185,11 +206,21 @@ exports.deleteField = catchAsync(async (req, res, next) => {
     return next(new AppError('User not found!', 404));
   }
 
+  // Log the delete action to the AuditLog
+  await AuditLog.create({
+    user: req.user.id,
+    action: 'delete',
+    field: fieldName,
+    previousValue: previousValue || null,
+    newValue: null,
+  });
+
   res.status(200).json({
     status: 'success',
     message: `${fieldName} removed successfully!`,
   });
 });
+
 
 // Render Admin Login Page
 exports.getAdminLoginPage = (req, res) => {
