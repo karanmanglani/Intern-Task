@@ -46,9 +46,9 @@ window.onload = async function() {
     // Function to fetch location from IP using ip-api
     const getLocationFromIp = async (ip) => {
       try {
-        const res = await fetch(`http://ip-api.com/json/${ip}`);
+        const res = await fetch(`https://freeipapi.com/api/json/${ip}`);
         const data = await res.json();
-        return data.city || 'Unknown';
+        return data.cityName || 'Unknown';
       } catch (error) {
         console.error(`Error fetching location for IP ${ip}:`, error);
         return 'Unknown';
