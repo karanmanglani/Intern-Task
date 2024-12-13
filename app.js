@@ -34,7 +34,9 @@ app.options('*', cors()); // Enable CORS for all routes
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Set security HTTP headers (Helmet helps protect against various attacks)
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: false, // Disable CSP
+}));
 
 // Development logging (Only enable for development environment)
 if (process.env.NODE_ENV === 'development') {

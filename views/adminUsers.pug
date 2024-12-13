@@ -1,10 +1,10 @@
-extends adminLayout
+extends layout
 
 block content
-  .container 
+  .container
+    h1 Admin Dashboard
 
-    h1 Manage Users
-
+    h2 User Data
     if users && users.length > 0
       table
         thead
@@ -12,8 +12,7 @@ block content
             th Username
             th Name
             th Email
-            th Phone
-            th Encrypted Phone Number
+            th Phone Number(Encrypted)
             th Address
         tbody
           each user in users
@@ -21,8 +20,26 @@ block content
               td= user.username
               td= user.name
               td= user.email || 'N/A'
-              td= user.getDecryptedPhone()|| 'N/A'
               td= user.phone || 'N/A'
               td= user.address || 'N/A'
     else
       p No users found.
+
+    h2 User Locations
+    canvas#locationPieChart(style="width: 100%; max-width: 600px;")
+
+    h2 Audit Logs
+    table.audit-log-table
+      thead
+        tr
+          th User
+          th IP Address
+          th Action
+          th Field
+          th Timestamp
+      tbody#auditLogBody
+
+  script(src="https://cdn.jsdelivr.net/npm/chart.js")
+  script(type="application/json" id="locationData")= locationData
+  script(type="application/json" id="auditLogsData")= auditLogs
+  script(src="/js/adminDashboard.js")

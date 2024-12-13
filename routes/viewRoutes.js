@@ -1,6 +1,8 @@
 const express = require('express');
 const viewsController = require('../controllers/viewsController');
 const authController = require('../controllers/authController');
+const AuditLog = require('../models/auditLog');
+const User = require('../models/userModel');
 
 const router = express.Router();
 
@@ -37,9 +39,35 @@ router.get('/admin/signup', viewsController.getAdminSignupPage);
 router.get('/admin/dashboard', authController.protect, authController.restrictTo('admin'), viewsController.getAdminDashboard);
 
 // Admin User Management
-router.get('/admin/users', authController.protect, authController.restrictTo('admin'), viewsController.getAllUsers);
-router.get('/admin/users/add', authController.protect, authController.restrictTo('admin'), viewsController.getAddUserPage);
-router.get('/admin/users/:id', authController.protect, authController.restrictTo('admin'), viewsController.getUser);
-router.get('/admin/users/:id/edit', authController.protect, authController.restrictTo('admin'), viewsController.getEditUserPage);
+router.get('/admin/users', authController.protect, authController.restrictTo('admin'), viewsController.getAdminDashboard );
+
+// Endpoint to fetch audit logs
+router.get('/admin/audit-logs', async (req, res) => {
+    const logs = await AuditLog.find({});
+    res.json(logs);
+});
+
+router.get('/admin/user-ips', async (req, res) => {
+    try {
+      // Fetch users with IP addresses
+      const usersWithIps = await User.find({ ipAddress: { $ne: null } }).select('ipAddress');
+      
+      // Return IP addresses as JSON
+      res.status(200).json(usersWithIps.map(user => user.ipAddress));
+    } catch (error) {
+      console.error("Error fetching user IPs:", error);
+      res.status(500).send("Error fetching user IPs");
+    }
+});
+
+router.get('/admin/get-username/:userId', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId, 'username');
+    res.json({ username: user ? user.username : 'Unknown' });
+  } catch (error) {
+    console.error("Error fetching username:", error);
+    res.status(500).send('Server error');
+  }
+});
 
 module.exports = router;

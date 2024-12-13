@@ -3,6 +3,7 @@ const Admin = require('../models/adminModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const AuditLog = require('../models/auditLog');
+const axios = require('axios');
 
 const encryptPhoneNumber = (phone) => {
   const SIMPLE_KEY = "mySimpleEncryptionKey"; // Use your consistent key
@@ -238,26 +239,36 @@ exports.getAdminSignupPage = (req, res) => {
   });
 };
 
-// Admin Dashboard
-exports.getAdminDashboard = catchAsync(async (req, res, next) => {
-  // Fetch admin info from `req.user` (logged in admin)
-  const admin = req.user;
-
-  res.status(200).render('adminDashboard', {
-    title: 'Admin Dashboard',
-    admin
-  });
-});
 
 // View All Users
-exports.getAllUsers = catchAsync(async (req, res, next) => {
+const geoip = require('geoip-lite');
+
+exports.getAdminDashboard = catchAsync(async (req, res, next) => {
+  // Fetch users
   const users = await User.find();
 
+  // Prepare location data
+  const locationData = {};  // Renamed from locationCounts to locationData
+  users.forEach((user) => {
+    if (user.ipAddress) {
+      const geo = geoip.lookup(user.ipAddress);
+      const location = geo?.city || 'Unknown';
+      locationData[location] = (locationData[location] || 0) + 1;
+    }
+  });
+
+  // Fetch audit logs
+  const auditLogs = await AuditLog.find().populate('user', 'username');
+
   res.status(200).render('adminUsers', {
-    title: 'Manage Users',
-    users
+    title: 'Admin Dashboard',
+    users,
+    locationData: JSON.stringify(locationData),  // Send the locationData to the view
+    auditLogs: JSON.stringify(auditLogs),  // Ensure both are stringified
   });
 });
+
+
 
 // Render User Profile
 exports.getUser = catchAsync(async (req, res, next) => {
