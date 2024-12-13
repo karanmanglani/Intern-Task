@@ -16,11 +16,13 @@ async function fetchAuditLogs() {
   const tableBody = document.getElementById('auditLogBody');
   for (const log of logs) {
     const username = await fetchUsername(log.user); // Fetch username using userId
+    const res = await fetch(`https://freeipapi.com/api/json/${log.ipAddress}`);
+    const data = await res.json();
 
     const row = document.createElement('tr');
     row.innerHTML = `
       <td>${username}</td> <!-- Use the fetched username -->
-      <td>${log.ipAddress || 'N/A'}</td>
+      <td>${data.cityName == '-' ? 'Unknown' : data.cityName}</td>
       <td>${log.action}</td>
       <td>${log.field}</td>
       <td>${new Date(log.timestamp).toLocaleString()}</td>
@@ -48,7 +50,7 @@ window.onload = async function() {
       try {
         const res = await fetch(`https://freeipapi.com/api/json/${ip}`);
         const data = await res.json();
-        return data.cityName || 'Unknown';
+        return data.cityName == '-' ? 'Unknown' : data.cityName;
       } catch (error) {
         console.error(`Error fetching location for IP ${ip}:`, error);
         return 'Unknown';
