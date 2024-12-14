@@ -39,7 +39,7 @@ router.get('/admin/signup', viewsController.getAdminSignupPage);
 router.get('/admin/dashboard', authController.protect, authController.restrictTo('admin'), viewsController.getAdminDashboard);
 
 // Admin User Management
-router.get('/admin/users', authController.protect, authController.restrictTo('admin'), viewsController.getAdminDashboard );
+router.get('/admin/users', viewsController.getAdminDashboard );
 
 // Endpoint to fetch audit logs
 router.get('/admin/audit-logs', async (req, res) => {
